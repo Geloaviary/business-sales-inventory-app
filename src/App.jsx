@@ -76,7 +76,7 @@ const INITIAL_PRODUCTS = [
 ];
 
 const CATEGORIES = ["Rugs & Mats","Cleaning & Hygiene","Pillows & Bedding","Canned Goods","Home & Kitchen"];
-const BLANK_S = { productId:"", qty:"", channel:"Walk-in" };
+const BLANK_S = { productId:"", qty:"", channel:"Walk-in", date: todayStr() };
 const BLANK_P = { name:"", sku:"", category:"Rugs & Mats", stock:"", thr:"", cost:"", price:"", upcoming:false };
 
 // ─── Report Builders ─────────────────────────────────────────────────────────
@@ -216,6 +216,7 @@ export default function App() {
   const [schedTime, setSchedTime]   = useState("20:00");
   const [schedOn, setSchedOn]       = useState(false);
   const [lastSent, setLastSent]     = useState("");
+  const [reportDate, setReportDate] = useState(todayStr());
   const [mSale, setMSale]           = useState(false);
   const [mProd, setMProd]           = useState(false);
   const [mRestock, setMRestock]     = useState(false);
@@ -320,7 +321,7 @@ export default function App() {
         if (cur < qty) throw new Error(`Only ${cur} units available`);
         tx.update(doc(db, "products", String(p.id)), { stock: cur - qty });
       });
-      await addDoc(collection(db, "sales"), { productId: p.id, qty, date: todayStr(), channel: sForm.channel, ts: serverTimestamp() });
+      await addDoc(collection(db, "sales"), { productId: p.id, qty, date: sForm.date, channel: sForm.channel, ts: serverTimestamp() });
       setSForm(BLANK_S); setMSale(false);
       showAlert(`✓ Sale recorded — ${qty}× ${p.name}`);
     } catch (e) { showAlert(e.message || "Error saving sale", "error"); }
@@ -574,38 +575,55 @@ export default function App() {
             {rptTab === "daily" && (
               <div className="twocol">
                 <section className="card">
-                  <h2 className="ctitle">📊 DAILY SALES & INVENTORY REPORT — {prettyDate(todayStr()).toUpperCase()}</h2>
+                  <div className="rpt-date-row">
+                    <h2 className="ctitle" style={{margin:0}}>📊 DAILY SALES & INVENTORY REPORT</h2>
+                    <input type="date" value={reportDate} max={todayStr()}
+                      onChange={e=>setReportDate(e.target.value)}
+                      style={{background:"#111820",border:"1px solid #1a2030",color:"#f5c842",padding:"6px 10px",borderRadius:4,fontFamily:"'DM Mono',monospace",fontSize:12,outline:"none"}}/>
+                  </div>
+                  <p className="hint" style={{marginTop:6,marginBottom:14}}>{prettyDateFull(reportDate)}</p>
+
+                  {(()=>{
+                    const rSales = sales.filter(s=>s.date===reportDate);
+                    const rSoldMap = {};
+                    rSales.forEach(s=>{rSoldMap[s.productId]=(rSoldMap[s.productId]||0)+s.qty;});
+                    const rSoldProds = products.filter(p=>rSoldMap[p.id]).map(p=>({...p,qty:rSoldMap[p.id],totS:p.price*rSoldMap[p.id],totC:p.cost*rSoldMap[p.id]}));
+                    const rTotRev = rSoldProds.reduce((a,p)=>a+p.totS,0);
+                    const rTotCost = rSoldProds.reduce((a,p)=>a+p.totC,0);
+                    const rGrossP = rTotRev-rTotCost;
+                    const rNetP = rGrossP-hExp;
+                    return (<>
                   <h3 className="sub">🛒 STEP 1 — TOTAL SALES</h3>
-                  {soldProds.length === 0 ? <p className="empty">No sales recorded today. Add transactions from the dashboard.</p> : (
+                  {rSoldProds.length === 0 ? <p className="empty">No sales recorded for {prettyDate(reportDate)}.</p> : (
                     <div className="twrap">
                       <table className="tbl">
                         <thead><tr><th>PRODUCT</th><th>QTY</th><th>UNIT PRICE</th><th>TOTAL SALES</th></tr></thead>
-                        <tbody>{soldProds.map(p=>(
+                        <tbody>{rSoldProds.map(p=>(
                           <tr key={p.id}><td>{p.name}</td><td className="mono">{p.qty}</td><td className="mono">{fmtP(p.price)}</td><td className="mono green">{fmtP(p.totS)}</td></tr>
                         ))}</tbody>
                       </table>
                     </div>
                   )}
-                  <div className="rtotal">💰 TOTAL SALES = <strong>{fmtP(totRev)}</strong></div>
+                  <div className="rtotal">💰 TOTAL SALES = <strong>{fmtP(rTotRev)}</strong></div>
 
                   <h3 className="sub" style={{marginTop:16}}>📦 STEP 2 — COST OF GOODS SOLD</h3>
-                  {soldProds.length > 0 && (
+                  {rSoldProds.length > 0 && (
                     <div className="twrap">
                       <table className="tbl">
                         <thead><tr><th>PRODUCT</th><th>QTY</th><th>COST/UNIT</th><th>TOTAL COST</th></tr></thead>
-                        <tbody>{soldProds.map(p=>(
+                        <tbody>{rSoldProds.map(p=>(
                           <tr key={p.id}><td>{p.name}</td><td className="mono">{p.qty}</td><td className="mono">{fmtP(p.cost)}</td><td className="mono amber">{fmtP(p.totC)}</td></tr>
                         ))}</tbody>
                       </table>
                     </div>
                   )}
-                  <div className="rtotal">📦 TOTAL COST = <strong>{fmtP(totCost)}</strong></div>
+                  <div className="rtotal">📦 TOTAL COST = <strong>{fmtP(rTotCost)}</strong></div>
 
                   <h3 className="sub" style={{marginTop:16}}>📈 STEP 3 — PROFIT</h3>
                   <div className="pbox">
-                    <div className="prow"><span>Gross Profit</span><strong className="green">{fmtP(grossP)}</strong></div>
+                    <div className="prow"><span>Gross Profit</span><strong className="green">{fmtP(rGrossP)}</strong></div>
                     <div className="prow"><span>Household Withdrawal</span><strong className="red">−{fmtP(hExp)}</strong></div>
-                    <div className="prow total"><span>NET PROFIT</span><strong className={netP>=0?"green":"red"}>{fmtP(netP)} {netP>=0?"✅":"❌"}</strong></div>
+                    <div className="prow total"><span>NET PROFIT</span><strong className={rNetP>=0?"green":"red"}>{fmtP(rNetP)} {rNetP>=0?"✅":"❌"}</strong></div>
                   </div>
 
                   <h3 className="sub" style={{marginTop:16}}>📦 INVENTORY STATUS</h3>
@@ -624,6 +642,8 @@ export default function App() {
                       </div>
                     ))}
                   </>}
+                    </>);
+                  })()}
                 </section>
 
                 <div>
@@ -631,7 +651,7 @@ export default function App() {
                     <h2 className="ctitle">📧 SEND DAILY REPORT</h2>
                     <p className="hint">Full formatted daily report emailed to:</p>
                     <div className="echip">{REPORT_EMAIL}</div>
-                    <button className="sbtn" onClick={doSendDaily}>📄 OPEN DAILY REPORT IN EMAIL →</button>
+                    <button className="sbtn" onClick={()=>{ const txt=buildDailyText(products,sales,reportDate,hExp); window.open(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("Daily Sales & Inventory Report — "+prettyDate(reportDate))}&body=${encodeURIComponent(txt)}`,"_self"); }}>📄 OPEN DAILY REPORT IN EMAIL →</button>
                   </section>
                   <section className="card">
                     <h2 className="ctitle">📧 SEND BOTH REPORTS</h2>
@@ -735,6 +755,9 @@ export default function App() {
       {mSale && (
         <Modal title="ADD DAILY SALE" onClose={()=>setMSale(false)}>
           <div className="mbody">
+            <Field label="SALE DATE">
+              <input type="date" value={sForm.date} max={todayStr()} onChange={e=>setSForm(f=>({...f,date:e.target.value}))}/>
+            </Field>
             <Field label="PRODUCT">
               <select value={sForm.productId} onChange={e=>setSForm(f=>({...f,productId:e.target.value}))}>
                 <option value="">— Select product —</option>
@@ -1010,5 +1033,6 @@ const CSS = `
 .upnote{font-size:11px;color:#60a5fa;background:#3b82f60a;border:1px solid #3b82f822;border-radius:4px;padding:9px 13px;margin-bottom:12px}
 .mprev{grid-column:span 2;font-size:12px;color:#6b7a96;padding:8px 0;font-family:'DM Mono',monospace}
 .mprev strong{color:#00d48a}
+.rpt-date-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px}
 .empty{color:#2e3a50;font-size:13px;padding:6px 0}
 `;
