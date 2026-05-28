@@ -743,14 +743,26 @@ export default function App() {
                 <div>
                   <section className="card">
                     <h2 className="ctitle">📧 SEND DAILY REPORT</h2>
-                    <p className="hint">Full formatted daily report emailed to:</p>
+                    <p className="hint">Report for <strong style={{color:"#f5c842"}}>{prettyDate(reportDate)}</strong> — sent to:</p>
                     <div className="echip">{REPORT_EMAIL}</div>
-                    <button className="sbtn" onClick={()=>{ const txt=buildDailyText(products,sales,reportDate,hExp); window.open(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("Daily Sales & Inventory Report — "+prettyDate(reportDate))}&body=${encodeURIComponent(txt)}`,"_self"); }}>📄 OPEN DAILY REPORT IN EMAIL →</button>
+                    <p className="hint" style={{marginBottom:8}}>Click below — it copies the report then opens your email. Just paste (Ctrl+V) into the body and hit Send.</p>
+                    <button className="sbtn" onClick={async()=>{
+                      const txt = buildDailyText(products,sales,reportDate,hExp);
+                      try { await navigator.clipboard.writeText(txt); } catch(e) {}
+                      window.open(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("Daily Sales & Inventory Report — "+prettyDate(reportDate))}`,"_self");
+                      showAlert("✓ Report copied! Paste it into the email body.");
+                    }}>📋 COPY REPORT &amp; OPEN EMAIL →</button>
                   </section>
                   <section className="card">
-                    <h2 className="ctitle">📧 SEND BOTH REPORTS</h2>
-                    <p className="hint">Send daily + monthly performance report together.</p>
-                    <button className="sbtn both" onClick={doSendBoth}>📧 SEND BOTH REPORTS →</button>
+                    <h2 className="ctitle">📧 SEND MONTHLY REPORT</h2>
+                    <p className="hint">Click below — copies the monthly report then opens your email.</p>
+                    <div className="echip">{REPORT_EMAIL}</div>
+                    <button className="sbtn both" onClick={async()=>{
+                      const txt = buildMonthlyText(products,sales,hExp);
+                      try { await navigator.clipboard.writeText(txt); } catch(e) {}
+                      window.open(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("Monthly Business Performance Report — May 2026")}`,"_self");
+                      showAlert("✓ Monthly report copied! Paste it into the email body.");
+                    }}>📋 COPY MONTHLY &amp; OPEN EMAIL →</button>
                   </section>
                   <section className="card">
                     <h2 className="ctitle">⏰ AUTO-SEND SCHEDULE</h2>
@@ -769,8 +781,8 @@ export default function App() {
                     {schedOn && <div className="spill" style={{borderRadius:4,padding:"10px 14px",fontSize:12,marginTop:8}}>● Active · {schedTime} daily · {REPORT_EMAIL}</div>}
                   </section>
                   <section className="card">
-                    <h2 className="ctitle">REPORT TEXT PREVIEW</h2>
-                    <pre className="rpre">{buildDailyText(products,sales,todayStr(),hExp)}</pre>
+                    <h2 className="ctitle">REPORT TEXT PREVIEW — {prettyDate(reportDate)}</h2>
+                    <pre className="rpre">{buildDailyText(products,sales,reportDate,hExp)}</pre>
                   </section>
                 </div>
               </div>
@@ -826,13 +838,24 @@ export default function App() {
                 <div>
                   <section className="card">
                     <h2 className="ctitle">📧 SEND MONTHLY REPORT</h2>
-                    <p className="hint">Full May 2026 performance report emailed to:</p>
+                    <p className="hint">Click below — copies the monthly report then opens your email. Paste (Ctrl+V) into the body.</p>
                     <div className="echip">{REPORT_EMAIL}</div>
-                    <button className="sbtn" onClick={doSendMonthly}>📈 OPEN MONTHLY REPORT IN EMAIL →</button>
+                    <button className="sbtn" onClick={async()=>{
+                      const txt=buildMonthlyText(products,sales,hExp);
+                      try{ await navigator.clipboard.writeText(txt); }catch(e){}
+                      window.open(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("Monthly Business Performance Report — May 2026")}`,"_self");
+                      showAlert("✓ Monthly report copied! Paste into the email body.");
+                    }}>📋 COPY MONTHLY &amp; OPEN EMAIL →</button>
                   </section>
                   <section className="card">
-                    <h2 className="ctitle">📧 SEND BOTH REPORTS</h2>
-                    <button className="sbtn both" onClick={doSendBoth}>📧 SEND BOTH REPORTS →</button>
+                    <h2 className="ctitle">📋 COPY BOTH REPORTS</h2>
+                    <p className="hint">Copies daily report to clipboard and opens email for monthly.</p>
+                    <button className="sbtn both" onClick={async()=>{
+                      const txt=buildDailyText(products,sales,reportDate,hExp)+"\n\n\n"+buildMonthlyText(products,sales,hExp);
+                      try{ await navigator.clipboard.writeText(txt); }catch(e){}
+                      window.open(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("Business Reports — "+prettyDate(reportDate))}`,"_self");
+                      showAlert("✓ Both reports copied! Paste into email body.");
+                    }}>📋 COPY BOTH &amp; OPEN EMAIL →</button>
                   </section>
                   <section className="card">
                     <h2 className="ctitle">REPORT TEXT PREVIEW</h2>
