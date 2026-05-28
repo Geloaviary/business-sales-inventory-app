@@ -217,6 +217,7 @@ export default function App() {
   const [schedOn, setSchedOn]       = useState(false);
   const [lastSent, setLastSent]     = useState("");
   const [reportDate, setReportDate] = useState(todayStr());
+  const [txnDate, setTxnDate]       = useState(todayStr());
   const [mEditSale, setMEditSale]   = useState(null);
   const [editForm, setEditForm]     = useState({productId:"",qty:"",channel:"Walk-in",date:""});
   const [mSale, setMSale]           = useState(false);
@@ -547,33 +548,64 @@ export default function App() {
             </div>
 
             <section className="card">
-              <h2 className="ctitle">TODAY'S TRANSACTIONS — {prettyDate(todayStr())}</h2>
-              {todaySales.length === 0 ? <p className="empty">No transactions recorded yet today.</p> : (
-                <div className="twrap">
-                  <table className="tbl">
-                    <thead><tr>{["SKU","PRODUCT","DATE","QTY","CHANNEL","SALES","PROFIT",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
-                    <tbody>
-                      {[...todaySales].reverse().map(s => {
-                        const p = products.find(x=>x.id===s.productId);
-                        return (<tr key={s.id}>
-                          <td className="mono dim">{p?.sku}</td><td>{p?.name}</td>
-                          <td className="mono dim">{s.date}</td>
-                          <td className="mono">{s.qty}</td>
-                          <td><span className={`tag ${(s.channel||"walk-in").replace(/\s/g,"-").toLowerCase()}`}>{s.channel}</span></td>
-                          <td className="mono green">{fmtP(p?.price*s.qty)}</td>
-                          <td className="mono amber">{fmtP((p?.price-p?.cost)*s.qty)}</td>
-                          <td>
-                            <div className="row-acts">
-                              <button className="row-edit" onClick={()=>{setEditForm({productId:String(s.productId),qty:String(s.qty),channel:s.channel,date:s.date});setMEditSale(s);}}>✏️</button>
-                              <button className="row-del" onClick={()=>handleDeleteSale(s)}>🗑</button>
-                            </div>
-                          </td>
-                        </tr>);
-                      })}
-                    </tbody>
-                  </table>
+              <div className="txn-header">
+                <div>
+                  <h2 className="ctitle" style={{margin:0}}>TRANSACTIONS</h2>
+                  <span className="txn-sub">{prettyDateFull(txnDate)}</span>
                 </div>
-              )}
+                <div className="txn-controls">
+                  <input type="date" value={txnDate} max={todayStr()}
+                    onChange={e=>setTxnDate(e.target.value)}
+                    style={{background:"#111820",border:"1px solid #1a2030",color:"#f5c842",padding:"6px 10px",borderRadius:4,fontFamily:"'DM Mono',monospace",fontSize:12,outline:"none"}}/>
+                  {txnDate !== todayStr() && (
+                    <button className="txn-today-btn" onClick={()=>setTxnDate(todayStr())}>← TODAY</button>
+                  )}
+                </div>
+              </div>
+              {(()=>{
+                const filtered = sales.filter(s=>s.date===txnDate);
+                const filtRev  = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?p.price*s.qty:0);},0);
+                const filtCost = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?p.cost*s.qty:0);},0);
+                const filtNet  = filtRev - filtCost - hExp;
+                return (<>
+                  {filtered.length > 0 && (
+                    <div className="txn-summary">
+                      <div className="ts"><span>SALES</span><strong className="green">{fmtP(filtRev)}</strong></div>
+                      <div className="ts"><span>COST</span><strong className="amber">{fmtP(filtCost)}</strong></div>
+                      <div className="ts"><span>GROSS PROFIT</span><strong className="green">{fmtP(filtRev-filtCost)}</strong></div>
+                      <div className="ts"><span>NET PROFIT</span><strong className={filtNet>=0?"green":"red"}>{fmtP(filtNet)} {filtNet>=0?"✅":"❌"}</strong></div>
+                    </div>
+                  )}
+                  {filtered.length === 0
+                    ? <p className="empty">No transactions recorded for {prettyDate(txnDate)}.</p>
+                    : (
+                      <div className="twrap">
+                        <table className="tbl">
+                          <thead><tr>{["SKU","PRODUCT","QTY","CHANNEL","SALES","PROFIT",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
+                          <tbody>
+                            {[...filtered].reverse().map(s=>{
+                              const p=products.find(x=>x.id===s.productId);
+                              return(<tr key={s.id}>
+                                <td className="mono dim">{p?.sku}</td>
+                                <td>{p?.name}</td>
+                                <td className="mono">{s.qty}</td>
+                                <td><span className={`tag ${(s.channel||"walk-in").replace(/\s/g,"-").toLowerCase()}`}>{s.channel}</span></td>
+                                <td className="mono green">{fmtP(p?.price*s.qty)}</td>
+                                <td className="mono amber">{fmtP((p?.price-p?.cost)*s.qty)}</td>
+                                <td>
+                                  <div className="row-acts">
+                                    <button className="row-edit" onClick={()=>{setEditForm({productId:String(s.productId),qty:String(s.qty),channel:s.channel,date:s.date});setMEditSale(s);}}>✏️</button>
+                                    <button className="row-del" onClick={()=>handleDeleteSale(s)}>🗑</button>
+                                  </div>
+                                </td>
+                              </tr>);
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                </>);
+              })()}
             </section>
           </div>
         )}
@@ -1131,6 +1163,15 @@ const CSS = `
 .mprev{grid-column:span 2;font-size:12px;color:#6b7a96;padding:8px 0;font-family:'DM Mono',monospace}
 .mprev strong{color:#00d48a}
 .rpt-date-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px}
+.txn-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.txn-sub{font-size:11px;color:#3a5070;font-family:'DM Mono',monospace;display:block;margin-top:3px}
+.txn-controls{display:flex;align-items:center;gap:8px}
+.txn-today-btn{background:#f5c84218;border:1px solid #f5c84244;color:#f5c842;padding:5px 10px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;white-space:nowrap}
+.txn-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+@media(max-width:700px){.txn-summary{grid-template-columns:repeat(2,1fr)}}
+.ts{background:#111820;border:1px solid #171f2e;border-radius:4px;padding:8px 12px}
+.ts span{display:block;font-size:8px;color:#2e3a50;letter-spacing:1px;font-family:'DM Mono',monospace;margin-bottom:3px}
+.ts strong{font-family:'DM Mono',monospace;font-size:13px}
 .row-acts{display:flex;gap:4px;justify-content:flex-end}
 .row-edit,.row-del{background:none;border:1px solid #1a2030;border-radius:3px;padding:3px 6px;cursor:pointer;font-size:12px;transition:all .2s}
 .row-edit:hover{border-color:#f5c84255;background:#f5c84210}
