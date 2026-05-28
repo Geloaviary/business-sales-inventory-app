@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
 import {
   collection, doc, onSnapshot, setDoc, updateDoc, addDoc,
-  getDocs, writeBatch, query, where, runTransaction, serverTimestamp
+  getDocs, writeBatch, query, where, runTransaction, serverTimestamp, deleteDoc
 } from "firebase/firestore";
 
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');`;
@@ -217,6 +217,8 @@ export default function App() {
   const [schedOn, setSchedOn]       = useState(false);
   const [lastSent, setLastSent]     = useState("");
   const [reportDate, setReportDate] = useState(todayStr());
+  const [mEditSale, setMEditSale]   = useState(null);
+  const [editForm, setEditForm]     = useState({productId:"",qty:"",channel:"Walk-in",date:""});
   const [mSale, setMSale]           = useState(false);
   const [mProd, setMProd]           = useState(false);
   const [mRestock, setMRestock]     = useState(false);
@@ -306,6 +308,59 @@ export default function App() {
     window.open(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent("Monthly Business Performance Report — May 2026")}&body=${encodeURIComponent(txt)}`, "_self");
   }
   function doSendBoth() { doSendDaily(); setTimeout(doSendMonthly, 1500); }
+
+  async function handleEditSale() {
+    if (!editForm.productId || !editForm.qty || Number(editForm.qty) <= 0) return showAlert("Fill all fields correctly", "error");
+    const oldSale = mEditSale;
+    const newProduct = products.find(x => x.id === Number(editForm.productId));
+    if (!newProduct) return;
+    const newQty = Number(editForm.qty);
+    const oldQty = Number(oldSale.qty);
+    const sameProduct = oldSale.productId === Number(editForm.productId);
+    setProcessing(true);
+    try {
+      if (sameProduct) {
+        const diff = oldQty - newQty;
+        if (diff !== 0) {
+          await runTransaction(db, async tx => {
+            const ref = doc(db, "products", String(newProduct.id));
+            const snap = await tx.get(ref);
+            const newStock = snap.data().stock + diff;
+            if (newStock < 0) throw new Error("Not enough stock for this quantity");
+            tx.update(ref, { stock: newStock });
+          });
+        }
+      } else {
+        await runTransaction(db, async tx => {
+          const oldRef = doc(db, "products", String(oldSale.productId));
+          const newRef = doc(db, "products", String(newProduct.id));
+          const [oldSnap, newSnap] = await Promise.all([tx.get(oldRef), tx.get(newRef)]);
+          if (newSnap.data().stock < newQty) throw new Error("Not enough stock for the new product");
+          tx.update(oldRef, { stock: oldSnap.data().stock + oldQty });
+          tx.update(newRef, { stock: newSnap.data().stock - newQty });
+        });
+      }
+      await updateDoc(doc(db, "sales", oldSale.id), {
+        productId: Number(editForm.productId), qty: newQty,
+        channel: editForm.channel, date: editForm.date,
+      });
+      setMEditSale(null);
+      showAlert("✓ Sale updated successfully");
+    } catch(e) { showAlert(e.message || "Error updating sale", "error"); }
+    setProcessing(false);
+  }
+
+  async function handleDeleteSale(sale) {
+    if (!window.confirm("Delete this sale record? Stock will be restored.")) return;
+    const p = products.find(x => x.id === sale.productId);
+    setProcessing(true);
+    try {
+      if (p) await updateDoc(doc(db, "products", String(p.id)), { stock: p.stock + Number(sale.qty) });
+      await deleteDoc(doc(db, "sales", sale.id));
+      showAlert(`✓ Sale deleted — stock restored`);
+    } catch(e) { showAlert("Error deleting sale", "error"); }
+    setProcessing(false);
+  }
 
   async function handleSale() {
     if (!sForm.productId || !sForm.qty || Number(sForm.qty) <= 0) return showAlert("Fill all fields correctly", "error");
@@ -496,16 +551,23 @@ export default function App() {
               {todaySales.length === 0 ? <p className="empty">No transactions recorded yet today.</p> : (
                 <div className="twrap">
                   <table className="tbl">
-                    <thead><tr>{["SKU","PRODUCT","QTY","CHANNEL","SALES","PROFIT"].map(h=><th key={h}>{h}</th>)}</tr></thead>
+                    <thead><tr>{["SKU","PRODUCT","DATE","QTY","CHANNEL","SALES","PROFIT",""].map(h=><th key={h}>{h}</th>)}</tr></thead>
                     <tbody>
                       {[...todaySales].reverse().map(s => {
                         const p = products.find(x=>x.id===s.productId);
                         return (<tr key={s.id}>
                           <td className="mono dim">{p?.sku}</td><td>{p?.name}</td>
+                          <td className="mono dim">{s.date}</td>
                           <td className="mono">{s.qty}</td>
                           <td><span className={`tag ${(s.channel||"walk-in").replace(/\s/g,"-").toLowerCase()}`}>{s.channel}</span></td>
                           <td className="mono green">{fmtP(p?.price*s.qty)}</td>
                           <td className="mono amber">{fmtP((p?.price-p?.cost)*s.qty)}</td>
+                          <td>
+                            <div className="row-acts">
+                              <button className="row-edit" onClick={()=>{setEditForm({productId:String(s.productId),qty:String(s.qty),channel:s.channel,date:s.date});setMEditSale(s);}}>✏️</button>
+                              <button className="row-del" onClick={()=>handleDeleteSale(s)}>🗑</button>
+                            </div>
+                          </td>
                         </tr>);
                       })}
                     </tbody>
@@ -866,6 +928,41 @@ export default function App() {
           </div>
         </Modal>
       )}
+      {mEditSale && (
+        <Modal title="EDIT SALE RECORD" onClose={()=>setMEditSale(null)}>
+          <div className="mbody">
+            <div className="edit-notice">Editing this sale — inventory stock will be adjusted automatically.</div>
+            <Field label="SALE DATE">
+              <input type="date" value={editForm.date} max={todayStr()} onChange={e=>setEditForm(f=>({...f,date:e.target.value}))}/>
+            </Field>
+            <Field label="PRODUCT">
+              <select value={editForm.productId} onChange={e=>setEditForm(f=>({...f,productId:e.target.value}))}>
+                <option value="">— Select product —</option>
+                {products.map(p=><option key={p.id} value={p.id}>{p.name} — {p.stock} in stock</option>)}
+              </select>
+            </Field>
+            <Field label="QUANTITY SOLD">
+              <input type="number" min="1" placeholder="0" value={editForm.qty} onChange={e=>setEditForm(f=>({...f,qty:e.target.value}))}/>
+            </Field>
+            <Field label="SALES CHANNEL">
+              <select value={editForm.channel} onChange={e=>setEditForm(f=>({...f,channel:e.target.value}))}>
+                {["Walk-in","Online","Wholesale"].map(c=><option key={c}>{c}</option>)}
+              </select>
+            </Field>
+            {editForm.productId && editForm.qty && (()=>{
+              const p = products.find(x=>x.id===Number(editForm.productId)); if(!p) return null;
+              return(<div className="pvstrip">
+                <div className="pvi"><span>New Sales</span><strong>{fmtP(p.price*Number(editForm.qty))}</strong></div>
+                <div className="pvi"><span>New Profit</span><strong>{fmtP((p.price-p.cost)*Number(editForm.qty))}</strong></div>
+              </div>);
+            })()}
+            <div className="macts">
+              <button className="mcancel" onClick={()=>setMEditSale(null)}>CANCEL</button>
+              <button className="mconfirm" onClick={handleEditSale} disabled={processing}>SAVE CHANGES →</button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -1034,5 +1131,10 @@ const CSS = `
 .mprev{grid-column:span 2;font-size:12px;color:#6b7a96;padding:8px 0;font-family:'DM Mono',monospace}
 .mprev strong{color:#00d48a}
 .rpt-date-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px}
+.row-acts{display:flex;gap:4px;justify-content:flex-end}
+.row-edit,.row-del{background:none;border:1px solid #1a2030;border-radius:3px;padding:3px 6px;cursor:pointer;font-size:12px;transition:all .2s}
+.row-edit:hover{border-color:#f5c84255;background:#f5c84210}
+.row-del:hover{border-color:#ff444455;background:#ff444410}
+.edit-notice{background:#3b82f610;border:1px solid #3b82f633;color:#60a5fa;font-size:11px;padding:9px 12px;border-radius:4px;margin-bottom:14px}
 .empty{color:#2e3a50;font-size:13px;padding:6px 0}
 `;
