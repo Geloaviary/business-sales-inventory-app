@@ -132,18 +132,20 @@ function buildDailyText(products, sales, date, hExp) {
 }
 
 function buildMonthlyText(products, sales, hExp) {
-  const now = new Date();
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
-  const monthSales = sales.filter(s => s.date >= monthStart);
-  const todayS = monthSales.filter(s => s.date === todayStr()).reduce((a,s) => {
-    const p = products.find(x => x.id === s.productId); return a + (p ? p.price * s.qty : 0);
-  }, 0);
-  const todayC = monthSales.filter(s => s.date === todayStr()).reduce((a,s) => {
-    const p = products.find(x => x.id === s.productId); return a + (p ? p.cost * s.qty : 0);
-  }, 0);
+  // Group all Firebase sales after May 26 by date
+  const newSalesMap = {};
+  sales.filter(s => s.date > "2026-05-26").forEach(s => {
+    const p = products.find(x => x.id === s.productId);
+    if (!p) return;
+    if (!newSalesMap[s.date]) newSalesMap[s.date] = { sales:0, cost:0 };
+    newSalesMap[s.date].sales += p.price * s.qty;
+    newSalesMap[s.date].cost  += p.cost  * s.qty;
+  });
+  const newDays = Object.entries(newSalesMap)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([date, v]) => ({ date, day: dayName(date), sales: v.sales, cost: v.cost }));
 
-  const allDays = [...HISTORICAL];
-  if (todayS > 0) allDays.push({ date: todayStr(), day: dayName(todayStr()), sales: todayS, cost: todayC });
+  const allDays = [...HISTORICAL, ...newDays];
 
   const totS = allDays.reduce((a, d) => a + d.sales, 0);
   const totC = allDays.reduce((a, d) => a + d.cost, 0);
@@ -439,20 +441,29 @@ export default function App() {
   })).sort((a,b) => b.rev - a.rev);
   const maxRev = topProds[0]?.rev || 1;
 
-  const now = new Date();
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
-  const todayForMonth = totRev > 0 ? [{ date:todayStr(), day:dayName(todayStr()), sales:totRev, cost:totCost }] : [];
-  const allDays = [...HISTORICAL, ...todayForMonth];
-  const mTotSales = allDays.reduce((a,d)=>a+d.sales,0);
-  const mTotCost  = allDays.reduce((a,d)=>a+d.cost,0);
-  const mGross    = mTotSales - mTotCost;
-  const mHH       = hExp * allDays.length;
-  const mNet      = mGross - mHH;
-  const mAvg      = mTotSales / allDays.length;
-  const bestDays  = [...allDays].sort((a,b)=>b.sales-a.sales).slice(0,5);
-  const dowAcc    = {};
+  // Build monthly allDays: HISTORICAL (May 1-26) + any Firebase sales after May 26 grouped by date
+  const newSalesMapComp = {};
+  sales.filter(s => s.date > "2026-05-26").forEach(s => {
+    const p = products.find(x => x.id === s.productId);
+    if (!p) return;
+    if (!newSalesMapComp[s.date]) newSalesMapComp[s.date] = { sales:0, cost:0 };
+    newSalesMapComp[s.date].sales += p.price * s.qty;
+    newSalesMapComp[s.date].cost  += p.cost  * s.qty;
+  });
+  const newDaysComp = Object.entries(newSalesMapComp)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([date, v]) => ({ date, day: dayName(date), sales: v.sales, cost: v.cost }));
+  const allDays    = [...HISTORICAL, ...newDaysComp];
+  const mTotSales  = allDays.reduce((a,d)=>a+d.sales,0);
+  const mTotCost   = allDays.reduce((a,d)=>a+d.cost,0);
+  const mGross     = mTotSales - mTotCost;
+  const mHH        = hExp * allDays.length;
+  const mNet       = mGross - mHH;
+  const mAvg       = mTotSales / allDays.length;
+  const bestDays   = [...allDays].sort((a,b)=>b.sales-a.sales).slice(0,5);
+  const dowAcc     = {};
   allDays.forEach(d => { if(!dowAcc[d.day]) dowAcc[d.day]={t:0,c:0}; dowAcc[d.day].t+=d.sales; dowAcc[d.day].c++; });
-  const dowList   = Object.entries(dowAcc).sort((a,b)=>b[1].t-a[1].t);
+  const dowList    = Object.entries(dowAcc).sort((a,b)=>b[1].t-a[1].t);
 
   if (loading) return (
     <div className="loadscreen">
