@@ -206,6 +206,10 @@ function Field({ label, children }) { return <div className="field"><label>{labe
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
+  const [authed, setAuthed]         = useState(()=>sessionStorage.getItem("bsia_auth")==="1");
+  const [loginForm, setLoginForm]   = useState({username:"",password:""});
+  const [loginError, setLoginError] = useState("");
+  const [showPw, setShowPw]         = useState(false);
   const [products, setProducts]     = useState([]);
   const [sales, setSales]           = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -296,6 +300,20 @@ export default function App() {
   }, [schedOn, schedTime, lastSent, products, sales]);
 
   function showAlert(msg, type = "success") { setAlert({ msg, type }); setTimeout(() => setAlert(null), 3200); }
+
+  function handleLogin(e) {
+    e?.preventDefault();
+    if (loginForm.username === "admin" && loginForm.password === "bsia2026") {
+      sessionStorage.setItem("bsia_auth","1");
+      setAuthed(true); setLoginError("");
+    } else {
+      setLoginError("Invalid username or password. Please try again.");
+    }
+  }
+  function handleLogout() {
+    sessionStorage.removeItem("bsia_auth");
+    setAuthed(false); setLoginForm({username:"",password:""});
+  }
 
   async function saveSettings(newHExp, newSchedTime, newSchedOn) {
     try { await setDoc(doc(db, "config", "settings"), { hExp: newHExp, schedTime: newSchedTime, schedOn: newSchedOn }); }
@@ -465,6 +483,45 @@ export default function App() {
   allDays.forEach(d => { if(!dowAcc[d.day]) dowAcc[d.day]={t:0,c:0}; dowAcc[d.day].t+=d.sales; dowAcc[d.day].c++; });
   const dowList    = Object.entries(dowAcc).sort((a,b)=>b[1].t-a[1].t);
 
+  if (!authed) return (
+    <div className="login-screen">
+      <div className="login-box">
+        <div className="login-logo">
+          <span className="lmark">▐</span>
+          <span className="ltxt">BIZ SALES</span>
+        </div>
+        <p className="login-appname">Business Sales & Inventory App</p>
+        <p className="login-sub">Sign in to access your dashboard</p>
+        <form onSubmit={handleLogin} className="login-form">
+          <div className="field">
+            <label>USERNAME</label>
+            <input
+              type="text" placeholder="Enter username" autoComplete="username"
+              value={loginForm.username}
+              onChange={e=>setLoginForm(f=>({...f,username:e.target.value}))}
+            />
+          </div>
+          <div className="field">
+            <label>PASSWORD</label>
+            <div className="pw-wrap">
+              <input
+                type={showPw?"text":"password"} placeholder="Enter password" autoComplete="current-password"
+                value={loginForm.password}
+                onChange={e=>setLoginForm(f=>({...f,password:e.target.value}))}
+              />
+              <button type="button" className="pw-toggle" onClick={()=>setShowPw(v=>!v)}>
+                {showPw?"🙈":"👁"}
+              </button>
+            </div>
+          </div>
+          {loginError && <div className="login-error">{loginError}</div>}
+          <button type="submit" className="login-btn">SIGN IN →</button>
+        </form>
+        <p className="login-hint">Default: admin / mher1975</p>
+      </div>
+    </div>
+  );
+
   if (loading) return (
     <div className="loadscreen">
       <div className="logo" style={{marginBottom:24}}><span className="lmark">▐</span><span className="ltxt">BIZ SALES</span><span className="lsub">& Inventory App</span></div>
@@ -486,6 +543,7 @@ export default function App() {
           {schedOn && <div className="spill">⏰ AUTO-SEND {schedTime}</div>}
         </div>
         {lowStock.length > 0 && <div className="lsbadge" onClick={()=>setTab("inventory")}>⚠ {lowStock.length} LOW STOCK</div>}
+        <button className="logout-btn" onClick={handleLogout}>⏻ LOGOUT</button>
       </header>
 
       <nav className="nav">
@@ -1041,6 +1099,21 @@ const CSS = `
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .fi{animation:fadeIn .3s ease}
+.login-screen{min-height:100vh;background:#080b10;display:flex;align-items:center;justify-content:center;padding:20px;font-family:'DM Sans',sans-serif}
+.login-box{background:#0c1018;border:1px solid #1a2030;border-radius:10px;padding:40px 36px;width:100%;max-width:400px;animation:fadeIn .4s ease}
+.login-logo{display:flex;align-items:baseline;gap:8px;justify-content:center;margin-bottom:8px}
+.login-appname{text-align:center;font-size:14px;color:#e2e8f0;font-weight:500;margin-bottom:4px}
+.login-sub{text-align:center;font-size:12px;color:#3a5070;margin-bottom:28px;font-family:'DM Mono',monospace;letter-spacing:1px}
+.login-form{display:flex;flex-direction:column;gap:4px}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:44px}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;line-height:1}
+.login-error{background:#ff444415;border:1px solid #ff444444;color:#ff6b6b;padding:10px 14px;border-radius:4px;font-size:12px;font-family:'DM Mono',monospace;margin-top:4px}
+.login-btn{margin-top:12px;width:100%;padding:13px;background:#f5c842;color:#080b10;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;transition:opacity .2s}
+.login-btn:hover{opacity:.88}
+.login-hint{text-align:center;font-size:11px;color:#2e3a50;margin-top:16px;font-family:'DM Mono',monospace}
+.logout-btn{background:none;border:1px solid #1a2030;color:#3a5070;padding:6px 12px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.logout-btn:hover{border-color:#ff444444;color:#ff6b6b}
 .loadscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#080b10;gap:20px}
 .spinner{width:36px;height:36px;border:3px solid #1a2030;border-top-color:#f5c842;border-radius:50%;animation:spin 1s linear infinite}
 .spinner.sm{width:22px;height:22px;border-width:2px}
