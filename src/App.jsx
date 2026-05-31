@@ -631,14 +631,18 @@ export default function App() {
       </header>
 
       <nav className="nav">
-        {[["dashboard","Dashboard"],["inventory","Inventory"],["reports","Reports & Email"]].map(([id,lbl]) => (
-          <button key={id} className={`nbtn${tab===id?" act":""}`} onClick={()=>setTab(id)}>{lbl}</button>
+        {[["dashboard","📊","Dashboard"],["inventory","📦","Inventory"],["reports","📈","Reports"]].map(([id,icon,lbl]) => (
+          <button key={id} className={`nbtn${tab===id?" act":""}`} onClick={()=>setTab(id)}>
+            <span className="nbtn-icon">{icon}</span>
+            <span className="nbtn-lbl">{lbl}</span>
+          </button>
         ))}
         <div className="nsp" />
         <button className="nact sale" onClick={()=>setMSale(true)}>+ ADD SALE</button>
         <button className="nact prod" onClick={()=>setMProd(true)}>+ ADD PRODUCT</button>
         <button className="nact exp"  onClick={()=>{setHExpInput(String(hExp));setMHExp(true);}}>⚙ EXPENSES</button>
       </nav>
+      <button className="fab" onClick={()=>setMSale(true)} title="Add Sale">+</button>
 
       <main className="main">
 
@@ -1401,4 +1405,68 @@ const CSS = `
 .row-del:hover{border-color:#ff444455;background:#ff444410}
 .edit-notice{background:#3b82f610;border:1px solid #3b82f633;color:#60a5fa;font-size:11px;padding:9px 12px;border-radius:4px;margin-bottom:14px}
 .empty{color:#2e3a50;font-size:13px;padding:6px 0}
+.nbtn-icon{display:none;font-size:20px;line-height:1}
+.nbtn-lbl{display:inline}
+.fab{display:none;position:fixed;bottom:76px;right:18px;z-index:500;width:56px;height:56px;background:#f5c842;border:none;border-radius:50%;font-size:32px;color:#080b10;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 20px #f5c84266;line-height:1}
+
+@media(max-width:700px){
+  .hdr{padding:10px 14px;gap:8px}
+  .hcenter{display:none}
+  .lsub{display:none}
+  .ltxt{font-size:20px}
+  .user-email{display:none}
+  .chpw-btn{display:none}
+  .lsbadge{font-size:10px;padding:4px 8px}
+  .nav{position:fixed;bottom:0;left:0;right:0;z-index:400;padding:0;border-top:1px solid #1a2030;border-bottom:none;justify-content:space-around;background:#0b0e18;height:62px}
+  .nbtn{flex:1;padding:6px 4px 8px;border-bottom:none;border-top:2px solid transparent;margin-bottom:0;margin-top:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:8px;letter-spacing:.5px}
+  .nbtn.act{color:#f5c842;border-top-color:#f5c842;border-bottom:none}
+  .nbtn-icon{display:block}
+  .nbtn-lbl{display:block}
+  .nsp,.nact{display:none}
+  .fab{display:flex}
+  .main{padding:12px 12px 74px}
+  .kgrid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+  .kval{font-size:26px}
+  .kpi{padding:12px}
+  .klbl{font-size:8px}
+  .ksub{font-size:10px}
+  .qgrid{grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:12px}
+  .qa{padding:10px 12px;gap:8px}
+  .qa b{font-size:9px}
+  .qa small{display:none}
+  .qi{font-size:16px;width:22px}
+  .twocol{grid-template-columns:1fr}
+  .two-col-report{grid-template-columns:1fr}
+  .card{padding:14px}
+  .igrid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .icard{padding:12px}
+  .iname{font-size:12px}
+  .istats{grid-template-columns:repeat(2,1fr)}
+  .invsum{grid-template-columns:repeat(2,1fr);gap:6px}
+  .invhdr{flex-direction:column;align-items:flex-start}
+  .fbar{gap:4px}
+  .fbtn{padding:4px 9px;font-size:8px}
+  .rtabs{gap:4px}
+  .rtab{padding:8px 12px;font-size:9px;flex:1;text-align:center}
+  .mkpis{grid-template-columns:repeat(2,1fr)}
+  .rpt-date-row{flex-direction:column;align-items:flex-start;gap:6px}
+  .txn-header{flex-direction:column;align-items:flex-start;gap:6px}
+  .txn-controls{width:100%;justify-content:space-between}
+  .txn-summary{grid-template-columns:repeat(2,1fr)}
+  .tbl th{font-size:8px;padding:6px 7px}
+  .tbl td{padding:7px 7px;font-size:11px}
+  .overlay{align-items:flex-end;padding:0}
+  .mbox,.mwide{border-radius:18px 18px 0 0;max-width:100%;max-height:92vh;overflow-y:auto}
+  .mhead{padding:14px 18px}
+  .mbody{padding:16px 18px}
+  .f2col{grid-template-columns:1fr}
+  .schedrow{flex-direction:column;gap:8px}
+  .tbtn{width:100%}
+  .rpre{font-size:9px;max-height:200px}
+  .sbtn{font-size:15px;padding:11px}
+  .login-box{padding:28px 20px}
+  .statsrows .sr{font-size:12px}
+  .bname{font-size:12px}
+  .lsname{font-size:12px}
+}
 `;
