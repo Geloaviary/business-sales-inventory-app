@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import {
   collection, doc, onSnapshot, setDoc, updateDoc, addDoc,
   getDocs, writeBatch, query, where, runTransaction, serverTimestamp, deleteDoc
 } from "firebase/firestore";
+import {
+  signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
+  onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential
+} from "firebase/auth";
 
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');`;
 const REPORT_EMAIL = "catchillarangelo@gmail.com";
@@ -206,10 +210,15 @@ function Field({ label, children }) { return <div className="field"><label>{labe
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [authed, setAuthed]         = useState(()=>sessionStorage.getItem("bsia_auth")==="1");
-  const [loginForm, setLoginForm]   = useState({username:"",password:""});
+  const [authed, setAuthed]         = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authMode, setAuthMode]     = useState("signin"); // "signin" | "forgot"
+  const [loginForm, setLoginForm]   = useState({email:"",password:""});
   const [loginError, setLoginError] = useState("");
+  const [loginMsg, setLoginMsg]     = useState("");
   const [showPw, setShowPw]         = useState(false);
+  const [mChangePw, setMChangePw]   = useState(false);
+  const [changePwForm, setChangePwForm] = useState({current:"",next:"",confirm:""});
   const [products, setProducts]     = useState([]);
   const [sales, setSales]           = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -241,6 +250,15 @@ export default function App() {
   useEffect(() => {
     if (!styleRef.current) { const s = document.createElement("style"); s.textContent = FONT + CSS; document.head.appendChild(s); styleRef.current = s; }
     return () => { if (styleRef.current) { styleRef.current.remove(); styleRef.current = null; } };
+  }, []);
+
+  // Firebase Auth state listener
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, user => {
+      setAuthed(!!user);
+      setAuthLoading(false);
+    });
+    return unsub;
   }, []);
 
   // Firebase: init & listen to products
@@ -301,18 +319,57 @@ export default function App() {
 
   function showAlert(msg, type = "success") { setAlert({ msg, type }); setTimeout(() => setAlert(null), 3200); }
 
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e?.preventDefault();
-    if (loginForm.username === "admin" && loginForm.password === "bsia2026") {
-      sessionStorage.setItem("bsia_auth","1");
-      setAuthed(true); setLoginError("");
-    } else {
-      setLoginError("Invalid username or password. Please try again.");
+    if (!loginForm.email || !loginForm.password) return setLoginError("Please enter your email and password.");
+    setLoginError("");
+    try {
+      await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
+    } catch(err) {
+      const msg = err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
+        ? "Invalid email or password. Please try again."
+        : err.code === "auth/too-many-requests"
+        ? "Too many failed attempts. Please try again later."
+        : "Sign in failed. Please check your details.";
+      setLoginError(msg);
     }
   }
-  function handleLogout() {
-    sessionStorage.removeItem("bsia_auth");
-    setAuthed(false); setLoginForm({username:"",password:""});
+
+  async function handleForgotPassword(e) {
+    e?.preventDefault();
+    if (!loginForm.email) return setLoginError("Please enter your email address.");
+    setLoginError(""); setLoginMsg("");
+    try {
+      await sendPasswordResetEmail(auth, loginForm.email);
+      setLoginMsg("✓ Password reset email sent! Check your inbox.");
+    } catch(err) {
+      setLoginError(err.code === "auth/user-not-found" ? "No account found with this email." : "Failed to send reset email. Try again.");
+    }
+  }
+
+  async function handleLogout() {
+    await signOut(auth);
+    setLoginForm({email:"",password:""}); setAuthMode("signin");
+  }
+
+  async function handleChangePassword() {
+    const {current, next, confirm} = changePwForm;
+    if (!current || !next || !confirm) return showAlert("Fill all fields","error");
+    if (next !== confirm) return showAlert("New passwords do not match","error");
+    if (next.length < 6) return showAlert("Password must be at least 6 characters","error");
+    setProcessing(true);
+    try {
+      const user = auth.currentUser;
+      const cred = EmailAuthProvider.credential(user.email, current);
+      await reauthenticateWithCredential(user, cred);
+      await updatePassword(user, next);
+      setChangePwForm({current:"",next:"",confirm:""});
+      setMChangePw(false);
+      showAlert("✓ Password changed successfully!");
+    } catch(err) {
+      showAlert(err.code === "auth/wrong-password" ? "Current password is incorrect." : "Failed to change password.","error");
+    }
+    setProcessing(false);
   }
 
   async function saveSettings(newHExp, newSchedTime, newSchedOn) {
@@ -483,41 +540,64 @@ export default function App() {
   allDays.forEach(d => { if(!dowAcc[d.day]) dowAcc[d.day]={t:0,c:0}; dowAcc[d.day].t+=d.sales; dowAcc[d.day].c++; });
   const dowList    = Object.entries(dowAcc).sort((a,b)=>b[1].t-a[1].t);
 
+  if (authLoading) return (
+    <div className="loadscreen">
+      <div className="logo"><span className="lmark">▐</span><span className="ltxt">BIZ SALES</span></div>
+      <div className="spinner"/>
+      <p className="loadtxt">Checking authentication...</p>
+    </div>
+  );
+
   if (!authed) return (
     <div className="login-screen">
       <div className="login-box">
-        <div className="login-logo">
-          <span className="lmark">▐</span>
-          <span className="ltxt">BIZ SALES</span>
-        </div>
-        <p className="login-appname">Business Sales & Inventory App</p>
-        <p className="login-sub">Sign in to access your dashboard</p>
-        <form onSubmit={handleLogin} className="login-form">
-          <div className="field">
-            <label>USERNAME</label>
-            <input
-              type="text" placeholder="Enter username" autoComplete="username"
-              value={loginForm.username}
-              onChange={e=>setLoginForm(f=>({...f,username:e.target.value}))}
-            />
-          </div>
-          <div className="field">
-            <label>PASSWORD</label>
-            <div className="pw-wrap">
-              <input
-                type={showPw?"text":"password"} placeholder="Enter password" autoComplete="current-password"
-                value={loginForm.password}
-                onChange={e=>setLoginForm(f=>({...f,password:e.target.value}))}
-              />
-              <button type="button" className="pw-toggle" onClick={()=>setShowPw(v=>!v)}>
-                {showPw?"🙈":"👁"}
-              </button>
+        <div className="login-logo"><span className="lmark">▐</span><span className="ltxt">BIZ SALES</span></div>
+        <p className="login-appname">Business Sales &amp; Inventory App</p>
+        <p className="login-sub">{authMode==="forgot" ? "RESET YOUR PASSWORD" : "SIGN IN TO YOUR ACCOUNT"}</p>
+
+        {authMode === "signin" && (
+          <form onSubmit={handleLogin} className="login-form">
+            <div className="field">
+              <label>EMAIL ADDRESS</label>
+              <input type="email" placeholder="you@email.com" autoComplete="email"
+                value={loginForm.email} onChange={e=>setLoginForm(f=>({...f,email:e.target.value}))}/>
             </div>
-          </div>
-          {loginError && <div className="login-error">{loginError}</div>}
-          <button type="submit" className="login-btn">SIGN IN →</button>
-        </form>
-        <p className="login-hint">Default: admin / mher1975</p>
+            <div className="field">
+              <label>PASSWORD</label>
+              <div className="pw-wrap">
+                <input type={showPw?"text":"password"} placeholder="Enter password" autoComplete="current-password"
+                  value={loginForm.password} onChange={e=>setLoginForm(f=>({...f,password:e.target.value}))}/>
+                <button type="button" className="pw-toggle" onClick={()=>setShowPw(v=>!v)}>{showPw?"🙈":"👁"}</button>
+              </div>
+            </div>
+            {loginError && <div className="login-error">{loginError}</div>}
+            <button type="submit" className="login-btn">SIGN IN →</button>
+            <button type="button" className="forgot-link" onClick={()=>{setAuthMode("forgot");setLoginError("");setLoginMsg("");}}>
+              Forgot Password?
+            </button>
+          </form>
+        )}
+
+        {authMode === "forgot" && (
+          <form onSubmit={handleForgotPassword} className="login-form">
+            <p className="forgot-desc">Enter your account email and we'll send you a password reset link.</p>
+            <div className="field">
+              <label>EMAIL ADDRESS</label>
+              <input type="email" placeholder="you@email.com" autoComplete="email"
+                value={loginForm.email} onChange={e=>setLoginForm(f=>({...f,email:e.target.value}))}/>
+            </div>
+            {loginError && <div className="login-error">{loginError}</div>}
+            {loginMsg  && <div className="login-success">{loginMsg}</div>}
+            <button type="submit" className="login-btn">SEND RESET EMAIL →</button>
+            <button type="button" className="forgot-link" onClick={()=>{setAuthMode("signin");setLoginError("");setLoginMsg("");}}>
+              ← Back to Sign In
+            </button>
+          </form>
+        )}
+
+        <div className="login-footer">
+          <span>🔒 Secured by Firebase Authentication</span>
+        </div>
       </div>
     </div>
   );
@@ -543,7 +623,11 @@ export default function App() {
           {schedOn && <div className="spill">⏰ AUTO-SEND {schedTime}</div>}
         </div>
         {lowStock.length > 0 && <div className="lsbadge" onClick={()=>setTab("inventory")}>⚠ {lowStock.length} LOW STOCK</div>}
-        <button className="logout-btn" onClick={handleLogout}>⏻ LOGOUT</button>
+        <div className="user-area">
+          <span className="user-email">{auth.currentUser?.email}</span>
+          <button className="chpw-btn" onClick={()=>setMChangePw(true)}>🔑 CHANGE PW</button>
+          <button className="logout-btn" onClick={handleLogout}>⏻ LOGOUT</button>
+        </div>
       </header>
 
       <nav className="nav">
@@ -1087,6 +1171,29 @@ export default function App() {
           </div>
         </Modal>
       )}
+      {mChangePw && (
+        <Modal title="CHANGE PASSWORD" onClose={()=>setMChangePw(false)}>
+          <div className="mbody">
+            <p className="hint" style={{marginBottom:16}}>Signed in as <strong style={{color:"#f5c842"}}>{auth.currentUser?.email}</strong></p>
+            <Field label="CURRENT PASSWORD">
+              <input type="password" placeholder="Enter current password" value={changePwForm.current}
+                onChange={e=>setChangePwForm(f=>({...f,current:e.target.value}))}/>
+            </Field>
+            <Field label="NEW PASSWORD">
+              <input type="password" placeholder="At least 6 characters" value={changePwForm.next}
+                onChange={e=>setChangePwForm(f=>({...f,next:e.target.value}))}/>
+            </Field>
+            <Field label="CONFIRM NEW PASSWORD">
+              <input type="password" placeholder="Repeat new password" value={changePwForm.confirm}
+                onChange={e=>setChangePwForm(f=>({...f,confirm:e.target.value}))}/>
+            </Field>
+            <div className="macts">
+              <button className="mcancel" onClick={()=>setMChangePw(false)}>CANCEL</button>
+              <button className="mconfirm" onClick={handleChangePassword} disabled={processing}>CHANGE PASSWORD →</button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -1100,18 +1207,27 @@ const CSS = `
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .fi{animation:fadeIn .3s ease}
 .login-screen{min-height:100vh;background:#080b10;display:flex;align-items:center;justify-content:center;padding:20px;font-family:'DM Sans',sans-serif}
-.login-box{background:#0c1018;border:1px solid #1a2030;border-radius:10px;padding:40px 36px;width:100%;max-width:400px;animation:fadeIn .4s ease}
+.login-box{background:#0c1018;border:1px solid #1a2030;border-radius:10px;padding:40px 36px;width:100%;max-width:420px;animation:fadeIn .4s ease}
 .login-logo{display:flex;align-items:baseline;gap:8px;justify-content:center;margin-bottom:8px}
-.login-appname{text-align:center;font-size:14px;color:#e2e8f0;font-weight:500;margin-bottom:4px}
-.login-sub{text-align:center;font-size:12px;color:#3a5070;margin-bottom:28px;font-family:'DM Mono',monospace;letter-spacing:1px}
+.login-appname{text-align:center;font-size:15px;color:#e2e8f0;font-weight:600;margin-bottom:4px}
+.login-sub{text-align:center;font-size:10px;color:#3a5070;margin-bottom:28px;font-family:'DM Mono',monospace;letter-spacing:2px}
 .login-form{display:flex;flex-direction:column;gap:4px}
 .pw-wrap{position:relative}
 .pw-wrap input{padding-right:44px}
 .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;line-height:1}
 .login-error{background:#ff444415;border:1px solid #ff444444;color:#ff6b6b;padding:10px 14px;border-radius:4px;font-size:12px;font-family:'DM Mono',monospace;margin-top:4px}
-.login-btn{margin-top:12px;width:100%;padding:13px;background:#f5c842;color:#080b10;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;transition:opacity .2s}
+.login-success{background:#00d48a15;border:1px solid #00d48a44;color:#00d48a;padding:10px 14px;border-radius:4px;font-size:12px;font-family:'DM Mono',monospace;margin-top:4px}
+.login-btn{margin-top:14px;width:100%;padding:13px;background:#f5c842;color:#080b10;border:none;border-radius:4px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;transition:opacity .2s}
 .login-btn:hover{opacity:.88}
-.login-hint{text-align:center;font-size:11px;color:#2e3a50;margin-top:16px;font-family:'DM Mono',monospace}
+.forgot-link{background:none;border:none;color:#3a5070;font-size:12px;cursor:pointer;padding:10px 0 0;text-align:center;transition:color .2s;font-family:'DM Sans',sans-serif}
+.forgot-link:hover{color:#f5c842}
+.forgot-desc{font-size:13px;color:#6b7a96;margin-bottom:14px;line-height:1.6;text-align:center}
+.login-footer{text-align:center;font-size:11px;color:#2e3a50;margin-top:20px;font-family:'DM Mono',monospace}
+.user-area{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.user-email{font-family:'DM Mono',monospace;font-size:11px;color:#3a5070;display:none}
+@media(min-width:900px){.user-email{display:block}}
+.chpw-btn{background:none;border:1px solid #1a2030;color:#3a5070;padding:6px 12px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.chpw-btn:hover{border-color:#f5c84444;color:#f5c842}
 .logout-btn{background:none;border:1px solid #1a2030;color:#3a5070;padding:6px 12px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s;flex-shrink:0}
 .logout-btn:hover{border-color:#ff444444;color:#ff6b6b}
 .loadscreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#080b10;gap:20px}
