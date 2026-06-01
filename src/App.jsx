@@ -40,56 +40,68 @@ const HISTORICAL = [
 
 // ─── May 26 Ending Inventory ─────────────────────────────────────────────────
 const INITIAL_PRODUCTS = [
-  { id:1,  sku:"RUG-001", name:"Doormat Rugs Rectangle",   category:"Rugs & Mats",        stock:672, thr:60,  cost:20,   price:30,   upcoming:false },
-  { id:2,  sku:"RUG-002", name:"Doormat Rugs Oval",        category:"Rugs & Mats",        stock:159, thr:30,  cost:20,   price:30,   upcoming:false },
-  { id:3,  sku:"RUG-003", name:"Doormat Rugs Bilog",       category:"Rugs & Mats",        stock:582, thr:30,  cost:20,   price:33,   upcoming:false },
-  { id:4,  sku:"RUG-004", name:"Doormat Salasala",         category:"Rugs & Mats",        stock:1,   thr:5,   cost:20,   price:35,   upcoming:false },
-  { id:5,  sku:"RUG-005", name:"Longmat Single 20x60",     category:"Rugs & Mats",        stock:0,   thr:5,   cost:100,  price:150,  upcoming:false },
-  { id:6,  sku:"RUG-006", name:"Longmat Single 25x60",     category:"Rugs & Mats",        stock:0,   thr:5,   cost:120,  price:180,  upcoming:false },
-  { id:7,  sku:"RUG-007", name:"Longmat Set",              category:"Rugs & Mats",        stock:5,   thr:3,   cost:200,  price:320,  upcoming:false },
-  { id:8,  sku:"RUG-008", name:"Longmat Double",           category:"Rugs & Mats",        stock:4,   thr:3,   cost:250,  price:480,  upcoming:false },
-  { id:9,  sku:"RUG-009", name:"Small Round Rugs",         category:"Rugs & Mats",        stock:402, thr:150, cost:1.60, price:2.20, upcoming:false },
-  { id:10, sku:"RUG-010", name:"Doormat Gamoza Rectangle", category:"Rugs & Mats",        stock:184, thr:30,  cost:40,   price:100,  upcoming:false },
-  { id:11, sku:"RUG-011", name:"Doormat Gamoza Oval",      category:"Rugs & Mats",        stock:58,  thr:20,  cost:40,   price:100,  upcoming:false },
-  { id:12, sku:"RUG-012", name:"Doormat Gamoza Bilog",     category:"Rugs & Mats",        stock:22,  thr:10,  cost:40,   price:100,  upcoming:false },
-  { id:13, sku:"RUG-013", name:"Kiddie Mat Queen",         category:"Rugs & Mats",        stock:3,   thr:3,   cost:250,  price:350,  upcoming:false },
-  { id:14, sku:"RUG-014", name:"Kiddie Mat Double",        category:"Rugs & Mats",        stock:5,   thr:3,   cost:200,  price:300,  upcoming:false },
-  { id:15, sku:"CLN-001", name:"Dishwashing Liquid 25",    category:"Cleaning & Hygiene", stock:32,  thr:10,  cost:17,   price:30,   upcoming:false },
-  { id:16, sku:"CLN-002", name:"Dishwashing Liquid 10",    category:"Cleaning & Hygiene", stock:3,   thr:10,  cost:8,    price:12,   upcoming:false },
-  { id:17, sku:"CLN-003", name:"Fabric Conditioner 30",    category:"Cleaning & Hygiene", stock:0,   thr:10,  cost:20,   price:30,   upcoming:false },
-  { id:18, sku:"CLN-004", name:"Fabric Conditioner 15",    category:"Cleaning & Hygiene", stock:6,   thr:10,  cost:10,   price:15,   upcoming:false },
-  { id:19, sku:"CLN-005", name:"Sponge",                   category:"Cleaning & Hygiene", stock:56,  thr:20,  cost:7,    price:10,   upcoming:false },
-  { id:20, sku:"CLN-006", name:"Sponge 25",                category:"Cleaning & Hygiene", stock:108, thr:20,  cost:10,   price:25,   upcoming:false },
-  { id:21, sku:"CLN-007", name:"Steelwool",                category:"Cleaning & Hygiene", stock:9,   thr:10,  cost:7,    price:10,   upcoming:false },
-  { id:22, sku:"CLN-008", name:"Pot Holder",               category:"Cleaning & Hygiene", stock:983, thr:50,  cost:7,    price:12.50,upcoming:false },
-  { id:23, sku:"CLN-009", name:"Pot Holder Big",           category:"Cleaning & Hygiene", stock:0,   thr:10,  cost:12,   price:25,   upcoming:false },
-  { id:24, sku:"PIL-001", name:"Pillow Large",             category:"Pillows & Bedding",  stock:8,   thr:5,   cost:75,   price:150,  upcoming:false },
-  { id:25, sku:"PIL-002", name:"Pillow Medium",            category:"Pillows & Bedding",  stock:19,  thr:5,   cost:90,   price:250,  upcoming:false },
-  { id:26, sku:"PIL-003", name:"Body Size Pillow",         category:"Pillows & Bedding",  stock:9,   thr:5,   cost:180,  price:380,  upcoming:false },
-  { id:27, sku:"PIL-004", name:"Hotdog Pillow Jumbo",      category:"Pillows & Bedding",  stock:4,   thr:3,   cost:180,  price:350,  upcoming:false },
-  { id:28, sku:"PIL-005", name:"Hotdog Pillow Large",      category:"Pillows & Bedding",  stock:8,   thr:3,   cost:100,  price:250,  upcoming:false },
-  { id:29, sku:"PIL-006", name:"Hotdog Pillow Medium",     category:"Pillows & Bedding",  stock:6,   thr:3,   cost:70,   price:180,  upcoming:false },
-  { id:30, sku:"PIL-007", name:"Pillow Case Large",        category:"Pillows & Bedding",  stock:58,  thr:10,  cost:25,   price:50,   upcoming:false },
-  { id:31, sku:"PIL-008", name:"Pillow Case Medium",       category:"Pillows & Bedding",  stock:57,  thr:10,  cost:22,   price:33,   upcoming:false },
-  { id:32, sku:"PIL-009", name:"Hotdog Pillow Case Jumbo", category:"Pillows & Bedding",  stock:12,  thr:5,   cost:45,   price:85,   upcoming:false },
-  { id:33, sku:"PIL-010", name:"Hotdog Pillow Case Large", category:"Pillows & Bedding",  stock:13,  thr:5,   cost:35,   price:65,   upcoming:false },
-  { id:34, sku:"CAN-001", name:"Can Goods Sardines",       category:"Canned Goods",       stock:512, thr:200, cost:17,   price:20,   upcoming:false },
-  { id:35, sku:"CAN-002", name:"Can Goods Sardines 25",    category:"Canned Goods",       stock:309, thr:100, cost:20,   price:25,   upcoming:false },
-  { id:36, sku:"HME-001", name:"Ref Towel",                category:"Home & Kitchen",     stock:22,  thr:10,  cost:10,   price:15,   upcoming:false },
-  { id:37, sku:"HME-002", name:"Ref Towel Big",            category:"Home & Kitchen",     stock:1,   thr:5,   cost:15,   price:25,   upcoming:false },
+  { id:1,  sku:"RUG-001", name:"Doormat Rugs Rectangle",   category:"Rugs & Mats",        stock:672, thr:60,  cost:20,   price:30,    wholesalePrice:25,  upcoming:false },
+  { id:2,  sku:"RUG-002", name:"Doormat Rugs Oval",        category:"Rugs & Mats",        stock:159, thr:30,  cost:20,   price:30,    wholesalePrice:25,  upcoming:false },
+  { id:3,  sku:"RUG-003", name:"Doormat Rugs Bilog",       category:"Rugs & Mats",        stock:582, thr:30,  cost:20,   price:33,    wholesalePrice:27,  upcoming:false },
+  { id:4,  sku:"RUG-004", name:"Doormat Salasala",         category:"Rugs & Mats",        stock:1,   thr:5,   cost:20,   price:35,    wholesalePrice:28,  upcoming:false },
+  { id:5,  sku:"RUG-005", name:"Longmat Single 20x60",     category:"Rugs & Mats",        stock:0,   thr:5,   cost:100,  price:150,   wholesalePrice:125, upcoming:false },
+  { id:6,  sku:"RUG-006", name:"Longmat Single 25x60",     category:"Rugs & Mats",        stock:0,   thr:5,   cost:120,  price:180,   wholesalePrice:150, upcoming:false },
+  { id:7,  sku:"RUG-007", name:"Longmat Set",              category:"Rugs & Mats",        stock:5,   thr:3,   cost:200,  price:320,   wholesalePrice:260, upcoming:false },
+  { id:8,  sku:"RUG-008", name:"Longmat Double",           category:"Rugs & Mats",        stock:4,   thr:3,   cost:250,  price:480,   wholesalePrice:365, upcoming:false },
+  { id:9,  sku:"RUG-009", name:"Small Round Rugs",         category:"Rugs & Mats",        stock:402, thr:150, cost:1.60, price:2.20,  wholesalePrice:1.90,upcoming:false },
+  { id:10, sku:"RUG-010", name:"Doormat Gamoza Rectangle", category:"Rugs & Mats",        stock:184, thr:30,  cost:40,   price:100,   wholesalePrice:70,  upcoming:false },
+  { id:11, sku:"RUG-011", name:"Doormat Gamoza Oval",      category:"Rugs & Mats",        stock:58,  thr:20,  cost:40,   price:100,   wholesalePrice:70,  upcoming:false },
+  { id:12, sku:"RUG-012", name:"Doormat Gamoza Bilog",     category:"Rugs & Mats",        stock:22,  thr:10,  cost:40,   price:100,   wholesalePrice:70,  upcoming:false },
+  { id:13, sku:"RUG-013", name:"Kiddie Mat Queen",         category:"Rugs & Mats",        stock:3,   thr:3,   cost:250,  price:350,   wholesalePrice:300, upcoming:false },
+  { id:14, sku:"RUG-014", name:"Kiddie Mat Double",        category:"Rugs & Mats",        stock:5,   thr:3,   cost:200,  price:300,   wholesalePrice:250, upcoming:false },
+  { id:15, sku:"CLN-001", name:"Dishwashing Liquid 25",    category:"Cleaning & Hygiene", stock:32,  thr:10,  cost:17,   price:30,    wholesalePrice:24,  upcoming:false },
+  { id:16, sku:"CLN-002", name:"Dishwashing Liquid 10",    category:"Cleaning & Hygiene", stock:3,   thr:10,  cost:8,    price:12,    wholesalePrice:10,  upcoming:false },
+  { id:17, sku:"CLN-003", name:"Fabric Conditioner 30",    category:"Cleaning & Hygiene", stock:0,   thr:10,  cost:20,   price:30,    wholesalePrice:25,  upcoming:false },
+  { id:18, sku:"CLN-004", name:"Fabric Conditioner 15",    category:"Cleaning & Hygiene", stock:6,   thr:10,  cost:10,   price:15,    wholesalePrice:13,  upcoming:false },
+  { id:19, sku:"CLN-005", name:"Sponge",                   category:"Cleaning & Hygiene", stock:56,  thr:20,  cost:7,    price:10,    wholesalePrice:9,   upcoming:false },
+  { id:20, sku:"CLN-006", name:"Sponge 25",                category:"Cleaning & Hygiene", stock:108, thr:20,  cost:10,   price:25,    wholesalePrice:18,  upcoming:false },
+  { id:21, sku:"CLN-007", name:"Steelwool",                category:"Cleaning & Hygiene", stock:9,   thr:10,  cost:7,    price:10,    wholesalePrice:9,   upcoming:false },
+  { id:22, sku:"CLN-008", name:"Pot Holder",               category:"Cleaning & Hygiene", stock:983, thr:50,  cost:7,    price:12.50, wholesalePrice:10,  upcoming:false },
+  { id:23, sku:"CLN-009", name:"Pot Holder Big",           category:"Cleaning & Hygiene", stock:0,   thr:10,  cost:12,   price:25,    wholesalePrice:19,  upcoming:false },
+  { id:24, sku:"PIL-001", name:"Pillow Large",             category:"Pillows & Bedding",  stock:8,   thr:5,   cost:75,   price:150,   wholesalePrice:113, upcoming:false },
+  { id:25, sku:"PIL-002", name:"Pillow Medium",            category:"Pillows & Bedding",  stock:19,  thr:5,   cost:90,   price:250,   wholesalePrice:170, upcoming:false },
+  { id:26, sku:"PIL-003", name:"Body Size Pillow",         category:"Pillows & Bedding",  stock:9,   thr:5,   cost:180,  price:380,   wholesalePrice:280, upcoming:false },
+  { id:27, sku:"PIL-004", name:"Hotdog Pillow Jumbo",      category:"Pillows & Bedding",  stock:4,   thr:3,   cost:180,  price:350,   wholesalePrice:265, upcoming:false },
+  { id:28, sku:"PIL-005", name:"Hotdog Pillow Large",      category:"Pillows & Bedding",  stock:8,   thr:3,   cost:100,  price:250,   wholesalePrice:175, upcoming:false },
+  { id:29, sku:"PIL-006", name:"Hotdog Pillow Medium",     category:"Pillows & Bedding",  stock:6,   thr:3,   cost:70,   price:180,   wholesalePrice:125, upcoming:false },
+  { id:30, sku:"PIL-007", name:"Pillow Case Large",        category:"Pillows & Bedding",  stock:58,  thr:10,  cost:25,   price:50,    wholesalePrice:38,  upcoming:false },
+  { id:31, sku:"PIL-008", name:"Pillow Case Medium",       category:"Pillows & Bedding",  stock:57,  thr:10,  cost:22,   price:33,    wholesalePrice:28,  upcoming:false },
+  { id:32, sku:"PIL-009", name:"Hotdog Pillow Case Jumbo", category:"Pillows & Bedding",  stock:12,  thr:5,   cost:45,   price:85,    wholesalePrice:65,  upcoming:false },
+  { id:33, sku:"PIL-010", name:"Hotdog Pillow Case Large", category:"Pillows & Bedding",  stock:13,  thr:5,   cost:35,   price:65,    wholesalePrice:50,  upcoming:false },
+  { id:34, sku:"CAN-001", name:"Can Goods Sardines",       category:"Canned Goods",       stock:512, thr:200, cost:17,   price:20,    wholesalePrice:18,  upcoming:false },
+  { id:35, sku:"CAN-002", name:"Can Goods Sardines 25",    category:"Canned Goods",       stock:309, thr:100, cost:20,   price:25,    wholesalePrice:23,  upcoming:false },
+  { id:36, sku:"HME-001", name:"Ref Towel",                category:"Home & Kitchen",     stock:22,  thr:10,  cost:10,   price:15,    wholesalePrice:13,  upcoming:false },
+  { id:37, sku:"HME-002", name:"Ref Towel Big",            category:"Home & Kitchen",     stock:1,   thr:5,   cost:15,   price:25,    wholesalePrice:20,  upcoming:false },
 ];
 
 const CATEGORIES = ["Rugs & Mats","Cleaning & Hygiene","Pillows & Bedding","Canned Goods","Home & Kitchen"];
 const BLANK_S = { productId:"", qty:"", channel:"Walk-in", date: todayStr() };
-const BLANK_P = { name:"", sku:"", category:"Rugs & Mats", stock:"", thr:"", cost:"", price:"", upcoming:false };
+const BLANK_P = { name:"", sku:"", category:"Rugs & Mats", stock:"", thr:"", cost:"", price:"", wholesalePrice:"", upcoming:false };
 
 // ─── Report Builders ─────────────────────────────────────────────────────────
 function buildDailyText(products, sales, date, hExp) {
   const ds = sales.filter(s => s.date === date);
+  // Group by productId keeping channel info for correct pricing
   const soldMap = {};
-  ds.forEach(s => { soldMap[s.productId] = (soldMap[s.productId] || 0) + s.qty; });
+  ds.forEach(s => {
+    if (!soldMap[s.productId]) soldMap[s.productId] = { qty:0, totS:0, totC:0, channel:s.channel };
+    const p = products.find(x => x.id === s.productId);
+    if (!p) return;
+    soldMap[s.productId].qty   += s.qty;
+    soldMap[s.productId].totS  += getEffectivePrice(p, s.channel) * s.qty;
+    soldMap[s.productId].totC  += p.cost * s.qty;
+  });
   const sold = products.filter(p => soldMap[p.id]).map(p => ({
-    ...p, qty: soldMap[p.id], totS: p.price * soldMap[p.id], totC: p.cost * soldMap[p.id]
+    ...p,
+    qty:  soldMap[p.id].qty,
+    totS: soldMap[p.id].totS,
+    totC: soldMap[p.id].totC,
+    effPrice: soldMap[p.id].totS / soldMap[p.id].qty,
   }));
   const totS = sold.reduce((a, p) => a + p.totS, 0);
   const totC = sold.reduce((a, p) => a + p.totC, 0);
@@ -103,7 +115,7 @@ function buildDailyText(products, sales, date, hExp) {
   t += `🛒 DAILY SALES REPORT\nSTEP 1: TOTAL SALES\n${ln()}\n`;
   t += `${pad("Product", 30)} ${rpad("Qty", 5)} ${rpad("Unit Price", 12)} ${rpad("Total Sales", 13)}\n${ln()}\n`;
   sold.length === 0 ? t += "  No sales recorded.\n" : sold.forEach(p => {
-    t += `${pad(p.name.substring(0,29), 30)} ${rpad(p.qty, 5)} ${rpad(fmtP(p.price), 12)} ${rpad(fmtP(p.totS), 13)}\n`;
+    t += `${pad(p.name.substring(0,29), 30)} ${rpad(p.qty, 5)} ${rpad(fmtP(p.effPrice), 12)} ${rpad(fmtP(p.totS), 13)}\n`;
   });
   t += `${ln()}\n💰 TOTAL SALES = ${fmtP(totS)}\n\n`;
 
@@ -142,7 +154,7 @@ function buildMonthlyText(products, sales, hExp) {
     const p = products.find(x => x.id === s.productId);
     if (!p) return;
     if (!newSalesMap[s.date]) newSalesMap[s.date] = { sales:0, cost:0 };
-    newSalesMap[s.date].sales += p.price * s.qty;
+    newSalesMap[s.date].sales += getEffectivePrice(p,s.channel) * s.qty;
     newSalesMap[s.date].cost  += p.cost  * s.qty;
   });
   const newDays = Object.entries(newSalesMap)
@@ -193,6 +205,12 @@ function buildMonthlyText(products, sales, hExp) {
   t += `\n🏁 STATUS: ${netG >= 0 ? "POSITIVE NET GROWTH ✅" : "NET LOSS — REVIEW NEEDED ❌"}\n`;
   t += `Generated by Business Sales & Inventory App  •  ${new Date().toLocaleString()}\n`;
   return t;
+}
+
+// ─── Price helper — uses wholesalePrice when channel is Wholesale ─────────────
+function getEffectivePrice(p, channel) {
+  if (!p) return 0;
+  return channel === "Wholesale" ? (p.wholesalePrice || p.price) : p.price;
 }
 
 // ─── UI Helpers ───────────────────────────────────────────────────────────────
@@ -468,7 +486,9 @@ export default function App() {
       await setDoc(doc(db, "products", String(nid)), {
         id: nid, sku, name, category, upcoming: !!upcoming,
         stock: upcoming ? 0 : Number(stock) || 0,
-        thr: Number(thr) || 10, cost: Number(cost) || 0, price: Number(price) || 0,
+        thr: Number(thr) || 10, cost: Number(cost) || 0,
+        price: Number(price) || 0,
+        wholesalePrice: Number(pForm.wholesalePrice) || Number(price) || 0,
       });
       setPForm(BLANK_P); setMProd(false);
       showAlert(upcoming ? `📦 "${name}" added as upcoming` : `✓ "${name}" added to inventory`);
@@ -491,7 +511,7 @@ export default function App() {
 
   // ── Computed ──
   const todaySales  = sales.filter(s => s.date === todayStr());
-  const totRev      = todaySales.reduce((a,s) => { const p = products.find(x=>x.id===s.productId); return a+(p?p.price*s.qty:0); }, 0);
+  const totRev      = todaySales.reduce((a,s) => { const p = products.find(x=>x.id===s.productId); return a+(p?getEffectivePrice(p,s.channel)*s.qty:0); }, 0);
   const totCost     = todaySales.reduce((a,s) => { const p = products.find(x=>x.id===s.productId); return a+(p?p.cost*s.qty:0); }, 0);
   const totUnits    = todaySales.reduce((a,s) => a+s.qty, 0);
   const grossP      = totRev - totCost;
@@ -520,7 +540,7 @@ export default function App() {
     const p = products.find(x => x.id === s.productId);
     if (!p) return;
     if (!newSalesMapComp[s.date]) newSalesMapComp[s.date] = { sales:0, cost:0 };
-    newSalesMapComp[s.date].sales += p.price * s.qty;
+    newSalesMapComp[s.date].sales += getEffectivePrice(p,s.channel) * s.qty;
     newSalesMapComp[s.date].cost  += p.cost  * s.qty;
   });
   const newDaysComp = Object.entries(newSalesMapComp)
@@ -719,7 +739,7 @@ export default function App() {
               </div>
               {(()=>{
                 const filtered = sales.filter(s=>s.date===txnDate);
-                const filtRev  = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?p.price*s.qty:0);},0);
+                const filtRev  = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?getEffectivePrice(p,s.channel)*s.qty:0);},0);
                 const filtCost = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?p.cost*s.qty:0);},0);
                 const filtNet  = filtRev - filtCost - hExp;
                 return (<>
@@ -745,8 +765,8 @@ export default function App() {
                                 <td>{p?.name}</td>
                                 <td className="mono">{s.qty}</td>
                                 <td><span className={`tag ${(s.channel||"walk-in").replace(/\s/g,"-").toLowerCase()}`}>{s.channel}</span></td>
-                                <td className="mono green">{fmtP(p?.price*s.qty)}</td>
-                                <td className="mono amber">{fmtP((p?.price-p?.cost)*s.qty)}</td>
+                                <td className="mono green">{fmtP(getEffectivePrice(p,s.channel)*s.qty)}</td>
+                                <td className="mono amber">{fmtP((getEffectivePrice(p,s.channel)-p?.cost)*s.qty)}</td>
                                 <td>
                                   <div className="row-acts">
                                     <button className="row-edit" onClick={()=>{setEditForm({productId:String(s.productId),qty:String(s.qty),channel:s.channel,date:s.date});setMEditSale(s);}}>✏️</button>
@@ -798,8 +818,8 @@ export default function App() {
                     <div className="istats">
                       <div className="ist"><span>STOCK</span><strong>{p.stock}</strong></div>
                       <div className="ist"><span>MIN</span><strong>{p.thr}</strong></div>
-                      <div className="ist"><span>COST</span><strong>{fmtP(p.cost)}</strong></div>
-                      <div className="ist"><span>PRICE</span><strong>{fmtP(p.price)}</strong></div>
+                      <div className="ist"><span>RETAIL</span><strong>{fmtP(p.price)}</strong></div>
+                      <div className="ist"><span>WHOLESALE</span><strong style={{color:"#60a5fa"}}>{fmtP(p.wholesalePrice||p.price)}</strong></div>
                     </div>
                     <div className="ifoot">
                       <span className="iinv">{fmtP(p.stock*p.cost)}</span>
@@ -1046,11 +1066,13 @@ export default function App() {
             </Field>
             {sForm.productId && sForm.qty && (()=>{
               const p = products.find(x=>x.id===Number(sForm.productId)); if(!p) return null;
-              const rev = p.price*Number(sForm.qty), profit = (p.price-p.cost)*Number(sForm.qty);
+              const effPrice = getEffectivePrice(p, sForm.channel);
+              const rev = effPrice*Number(sForm.qty), profit = (effPrice-p.cost)*Number(sForm.qty);
               return (<div className="pvstrip">
-                <div className="pvi"><span>Sales</span><strong>{fmtP(rev)}</strong></div>
-                <div className="pvi"><span>Profit</span><strong>{fmtP(profit)}</strong></div>
-                <div className="pvi"><span>Stock After</span><strong style={{color:p.stock-Number(sForm.qty)<=p.thr?"#ff6b6b":"#00d48a"}}>{p.stock-Number(sForm.qty)}</strong></div>
+                <div className="pvi"><span>UNIT PRICE</span><strong>{fmtP(effPrice)}</strong></div>
+                <div className="pvi"><span>SALES</span><strong>{fmtP(rev)}</strong></div>
+                <div className="pvi"><span>PROFIT</span><strong>{fmtP(profit)}</strong></div>
+                <div className="pvi"><span>STOCK AFTER</span><strong style={{color:p.stock-Number(sForm.qty)<=p.thr?"#ff6b6b":"#00d48a"}}>{p.stock-Number(sForm.qty)}</strong></div>
               </div>);
             })()}
             <div className="macts">
@@ -1080,9 +1102,13 @@ export default function App() {
               </Field>
               <Field label="COST PRICE (₱) *"><input type="number" min="0" step="0.01" placeholder="0.00" value={pForm.cost} onChange={e=>setPForm(f=>({...f,cost:e.target.value}))}/></Field>
               <Field label="SELLING PRICE (₱) *"><input type="number" min="0" step="0.01" placeholder="0.00" value={pForm.price} onChange={e=>setPForm(f=>({...f,price:e.target.value}))}/></Field>
+              <Field label="WHOLESALE PRICE (₱)"><input type="number" min="0" step="0.01" placeholder="0.00" value={pForm.wholesalePrice} onChange={e=>setPForm(f=>({...f,wholesalePrice:e.target.value}))}/></Field>
               <Field label="LOW STOCK THRESHOLD"><input type="number" min="1" placeholder="10" value={pForm.thr} onChange={e=>setPForm(f=>({...f,thr:e.target.value}))}/></Field>
               {!pForm.upcoming && <Field label="OPENING STOCK QTY"><input type="number" min="0" placeholder="0" value={pForm.stock} onChange={e=>setPForm(f=>({...f,stock:e.target.value}))}/></Field>}
-              {pForm.cost && pForm.price && <div className="mprev">Margin: <strong>{pForm.price>0?(((pForm.price-pForm.cost)/pForm.price)*100).toFixed(1):0}%  ·  {fmtP(pForm.price-pForm.cost)}/unit</strong></div>}
+              {pForm.cost && pForm.price && <div className="mprev">
+                Retail margin: <strong>{pForm.price>0?(((pForm.price-pForm.cost)/pForm.price)*100).toFixed(1):0}% · {fmtP(pForm.price-pForm.cost)}/unit</strong>
+                {pForm.wholesalePrice && <span style={{marginLeft:16}}>Wholesale margin: <strong>{pForm.wholesalePrice>0?(((pForm.wholesalePrice-pForm.cost)/pForm.wholesalePrice)*100).toFixed(1):0}% · {fmtP(pForm.wholesalePrice-pForm.cost)}/unit</strong></span>}
+              </div>}
             </div>
             <div className="macts">
               <button className="mcancel" onClick={()=>setMProd(false)}>CANCEL</button>
