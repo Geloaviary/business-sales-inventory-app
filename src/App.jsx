@@ -80,7 +80,7 @@ const INITIAL_PRODUCTS = [
 ];
 
 const CATEGORIES = ["Rugs & Mats","Cleaning & Hygiene","Pillows & Bedding","Canned Goods","Home & Kitchen"];
-const BLANK_S = { productId:"", qty:"", channel:"Walk-in", date: todayStr() };
+const BLANK_S = { productId:"", qty:"", channel:"Walk-in", date: todayStr(), customWholesalePrice:"" };
 const BLANK_P = { name:"", sku:"", category:"Rugs & Mats", stock:"", thr:"", cost:"", price:"", wholesalePrice:"", upcoming:false };
 
 // ─── Report Builders ─────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ function buildDailyText(products, sales, date, hExp) {
     const p = products.find(x => x.id === s.productId);
     if (!p) return;
     soldMap[s.productId].qty   += s.qty;
-    soldMap[s.productId].totS  += getEffectivePrice(p, s.channel) * s.qty;
+    soldMap[s.productId].totS  += getEffectivePrice(p, s.channel, s.priceUsed) * s.qty;
     soldMap[s.productId].totC  += p.cost * s.qty;
   });
   const sold = products.filter(p => soldMap[p.id]).map(p => ({
@@ -154,7 +154,7 @@ function buildMonthlyText(products, sales, hExp) {
     const p = products.find(x => x.id === s.productId);
     if (!p) return;
     if (!newSalesMap[s.date]) newSalesMap[s.date] = { sales:0, cost:0 };
-    newSalesMap[s.date].sales += getEffectivePrice(p,s.channel) * s.qty;
+    newSalesMap[s.date].sales += getEffectivePrice(p,s.channel,s.priceUsed) * s.qty;
     newSalesMap[s.date].cost  += p.cost  * s.qty;
   });
   const newDays = Object.entries(newSalesMap)
@@ -208,7 +208,8 @@ function buildMonthlyText(products, sales, hExp) {
 }
 
 // ─── Price helper — uses wholesalePrice when channel is Wholesale ─────────────
-function getEffectivePrice(p, channel) {
+function getEffectivePrice(p, channel, priceUsed) {
+  if (priceUsed != null && priceUsed > 0) return priceUsed;
   if (!p) return 0;
   return channel === "Wholesale" ? (p.wholesalePrice || p.price) : p.price;
 }
@@ -464,13 +465,19 @@ export default function App() {
     setProcessing(true);
     try {
       const qty = Number(sForm.qty);
+      const priceUsed = sForm.channel === "Wholesale"
+        ? (Number(sForm.customWholesalePrice) || p.wholesalePrice || p.price)
+        : p.price;
       await runTransaction(db, async tx => {
         const snap = await tx.get(doc(db, "products", String(p.id)));
         const cur = snap.data().stock;
         if (cur < qty) throw new Error(`Only ${cur} units available`);
         tx.update(doc(db, "products", String(p.id)), { stock: cur - qty });
       });
-      await addDoc(collection(db, "sales"), { productId: p.id, qty, date: sForm.date, channel: sForm.channel, ts: serverTimestamp() });
+      await addDoc(collection(db, "sales"), {
+        productId: p.id, qty, date: sForm.date, channel: sForm.channel,
+        priceUsed, ts: serverTimestamp()
+      });
       setSForm(BLANK_S); setMSale(false);
       showAlert(`✓ Sale recorded — ${qty}× ${p.name}`);
     } catch (e) { showAlert(e.message || "Error saving sale", "error"); }
@@ -511,7 +518,7 @@ export default function App() {
 
   // ── Computed ──
   const todaySales  = sales.filter(s => s.date === todayStr());
-  const totRev      = todaySales.reduce((a,s) => { const p = products.find(x=>x.id===s.productId); return a+(p?getEffectivePrice(p,s.channel)*s.qty:0); }, 0);
+  const totRev      = todaySales.reduce((a,s) => { const p = products.find(x=>x.id===s.productId); return a+(p?getEffectivePrice(p,s.channel,s.priceUsed)*s.qty:0); }, 0);
   const totCost     = todaySales.reduce((a,s) => { const p = products.find(x=>x.id===s.productId); return a+(p?p.cost*s.qty:0); }, 0);
   const totUnits    = todaySales.reduce((a,s) => a+s.qty, 0);
   const grossP      = totRev - totCost;
@@ -540,7 +547,7 @@ export default function App() {
     const p = products.find(x => x.id === s.productId);
     if (!p) return;
     if (!newSalesMapComp[s.date]) newSalesMapComp[s.date] = { sales:0, cost:0 };
-    newSalesMapComp[s.date].sales += getEffectivePrice(p,s.channel) * s.qty;
+    newSalesMapComp[s.date].sales += getEffectivePrice(p,s.channel,s.priceUsed) * s.qty;
     newSalesMapComp[s.date].cost  += p.cost  * s.qty;
   });
   const newDaysComp = Object.entries(newSalesMapComp)
@@ -739,7 +746,7 @@ export default function App() {
               </div>
               {(()=>{
                 const filtered = sales.filter(s=>s.date===txnDate);
-                const filtRev  = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?getEffectivePrice(p,s.channel)*s.qty:0);},0);
+                const filtRev  = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?getEffectivePrice(p,s.channel,s.priceUsed)*s.qty:0);},0);
                 const filtCost = filtered.reduce((a,s)=>{const p=products.find(x=>x.id===s.productId);return a+(p?p.cost*s.qty:0);},0);
                 const filtNet  = filtRev - filtCost - hExp;
                 return (<>
@@ -765,8 +772,8 @@ export default function App() {
                                 <td>{p?.name}</td>
                                 <td className="mono">{s.qty}</td>
                                 <td><span className={`tag ${(s.channel||"walk-in").replace(/\s/g,"-").toLowerCase()}`}>{s.channel}</span></td>
-                                <td className="mono green">{fmtP(getEffectivePrice(p,s.channel)*s.qty)}</td>
-                                <td className="mono amber">{fmtP((getEffectivePrice(p,s.channel)-p?.cost)*s.qty)}</td>
+                                <td className="mono green">{fmtP(getEffectivePrice(p,s.channel,s.priceUsed)*s.qty)}</td>
+                                <td className="mono amber">{fmtP((getEffectivePrice(p,s.channel,s.priceUsed)-p?.cost)*s.qty)}</td>
                                 <td>
                                   <div className="row-acts">
                                     <button className="row-edit" onClick={()=>{setEditForm({productId:String(s.productId),qty:String(s.qty),channel:s.channel,date:s.date});setMEditSale(s);}}>✏️</button>
@@ -1060,18 +1067,34 @@ export default function App() {
               <input type="number" min="1" placeholder="0" value={sForm.qty} onChange={e=>setSForm(f=>({...f,qty:e.target.value}))}/>
             </Field>
             <Field label="SALES CHANNEL">
-              <select value={sForm.channel} onChange={e=>setSForm(f=>({...f,channel:e.target.value}))}>
+              <select value={sForm.channel} onChange={e=>{
+                const ch = e.target.value;
+                const p = products.find(x=>x.id===Number(sForm.productId));
+                setSForm(f=>({...f, channel:ch, customWholesalePrice: ch==="Wholesale" ? String(p?.wholesalePrice||"") : ""}));
+              }}>
                 {["Walk-in","Online","Wholesale"].map(c=><option key={c}>{c}</option>)}
               </select>
             </Field>
+            {sForm.channel === "Wholesale" && (
+              <Field label="WHOLESALE PRICE PER UNIT (₱)">
+                <input
+                  type="number" min="0" step="0.01"
+                  placeholder={`Suggested: ${fmtP(products.find(x=>x.id===Number(sForm.productId))?.wholesalePrice||0)}`}
+                  value={sForm.customWholesalePrice}
+                  onChange={e=>setSForm(f=>({...f,customWholesalePrice:e.target.value}))}
+                />
+              </Field>
+            )}
             {sForm.productId && sForm.qty && (()=>{
               const p = products.find(x=>x.id===Number(sForm.productId)); if(!p) return null;
-              const effPrice = getEffectivePrice(p, sForm.channel);
+              const effPrice = sForm.channel === "Wholesale"
+                ? (Number(sForm.customWholesalePrice) || p.wholesalePrice || p.price)
+                : p.price;
               const rev = effPrice*Number(sForm.qty), profit = (effPrice-p.cost)*Number(sForm.qty);
               return (<div className="pvstrip">
                 <div className="pvi"><span>UNIT PRICE</span><strong>{fmtP(effPrice)}</strong></div>
                 <div className="pvi"><span>SALES</span><strong>{fmtP(rev)}</strong></div>
-                <div className="pvi"><span>PROFIT</span><strong>{fmtP(profit)}</strong></div>
+                <div className="pvi"><span>PROFIT</span><strong className={profit>=0?"green":"red"}>{fmtP(profit)}</strong></div>
                 <div className="pvi"><span>STOCK AFTER</span><strong style={{color:p.stock-Number(sForm.qty)<=p.thr?"#ff6b6b":"#00d48a"}}>{p.stock-Number(sForm.qty)}</strong></div>
               </div>);
             })()}
